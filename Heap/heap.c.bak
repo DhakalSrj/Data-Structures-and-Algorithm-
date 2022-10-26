@@ -1,0 +1,243 @@
+#include <stdlib.h>
+#include <stdio.h>
+
+#include "heap.h"  
+
+#define DEBUG 1
+
+void insert( int *arr, int newKey ,int *N);
+
+struct heap_struct make_heap_empty(int cap)
+{
+	if(cap==0)
+	{
+		printf("The heap is empty");
+	}
+	else
+	{
+	  struct heap_struct heap_empty;
+	  heap_empty.capacity = cap;
+	  heap_empty.items = (int*)malloc(sizeof(int)*(cap));
+	  heap_empty.N = 0 ; 
+	  return heap_empty;
+	}
+
+}
+
+struct heap_struct make_heap(int N, int * arr)
+{
+	struct heap_struct heapS;
+	heapS.N = N;
+	heapS.capacity = N;
+
+	int i;
+	for ( i=N/2-1;i>=0; i--)
+	{
+		heapify(i,N,arr);
+	}
+	heapS.items = arr;
+	return heapS;
+}
+
+void swap(int *arr, int idx1, int idx2)
+ {
+
+ 	// printf(" Index:%d <> %d, Values:%d <> %d \n", idx1,idx2,arr[idx1],arr[idx2]);
+    int temp = arr[idx1];
+    arr[idx1] = arr[idx2];
+    arr[idx2] = temp;
+}
+
+void print_heap(struct heap_struct heapS)
+{
+	int i;
+    
+    printf("Heap:  size: %d, capacity : %d \n", heapS.N, heapS.capacity);
+    printf("Indexes:   ");
+    for (i=0; i<heapS.N; i++)
+	{
+		printf("%d,   ",i);
+	}
+	printf("\n");
+	printf("Values :   ");
+	 for (i=0; i<heapS.N; i++)
+	{
+		printf("%d,   ",heapS.items[i]);
+	}
+	printf("\n");
+
+}
+
+
+void swim_up(int idx, int * arr)
+{
+	while(DEBUG)
+	{
+		// Can only swim up if the node isn't the root.
+	    if (idx > 0) 
+			
+		{      
+	        // See if our current node is smaller in value than its parent.        
+	        if (arr[(idx)/2] > arr[idx]) 
+				{
+	            // Move our node up by one
+	            swap(arr, idx, (idx)/2);
+	            
+	            // See if it needs to be done again.
+	            swim_up((idx)/2,arr);
+			}
+		}
+	}
+	
+}
+int idxOfMaxValue(int* A, int p, int left,int right, int N)
+{
+	int imv = p; // so far p is the index of the largest value
+	// there is a left child and he is bigger than the parent
+	if ((left<N) && (A[left]>A[imv]))
+		{
+			imv = left; // set imv to index of left child
+		}
+	// There is a right child and it is bigger than max value seen
+	if ((right<N)&&(A[right]>A[imv]))
+	{
+		imv = right; // set imv to index of left child
+	}
+	return imv;
+}
+
+
+void heapify(int i, int N, int * arr)
+{
+	int left = (2 * i)+ 1; //left child of i
+	int right = (2*i)+ 2; // right child of i
+	
+	int imv = idxOfMaxValue ( arr , i, left , right , N);
+	while ((imv != i) && (imv <=N-1))
+	{
+		swap( arr, imv,i);
+		i = imv;
+		left = (2*i)+ 1;
+		right = (2*i) + 2;
+		imv = idxOfMaxValue(arr,i,left,right,N);
+	}
+}
+
+
+void destroy(struct heap_struct * heapP)
+{
+	
+	heapP->N =0;
+	heapP->capacity=0;
+}
+void add(struct heap_struct * heapP, int new_item)
+{
+	int* temp;
+    int* throw;
+    int i;
+    
+    // Our array is full, we need to allocate some new space!
+    if (heapP->N == heapP->capacity)
+	{
+                
+        // We will double the size of the structure.
+        heapP->capacity *= 2;
+      
+        // Allocate new space for an array.
+        temp = (int*)malloc(sizeof(int)*heapP->capacity);
+      
+        // Copy all the items over.
+        for (i=0; i<=heapP->capacity; i++)
+		{
+            temp[i] = heapP->items[(i)];
+		}
+            
+        // Move the pointer and free the old memory.
+        throw = heapP->items;
+        heapP->items = temp;
+        free(throw);
+	}
+	insert(heapP->items,new_item,&heapP->N);
+}
+
+
+void insert( int *arr, int newKey ,int *N)
+{
+	(*N) = (*N)+1; // permanent change
+	int i = (*N)-1 ;// index of increased node
+	arr[i] = newKey;
+	// swimUp code:
+	while ( (i>=0) && (arr[i]>arr[(i-1)/2]) )
+	 {
+		swap(arr, i, (i-1)/2) ;
+		i = (i-1)/2 ;
+
+	}
+} 
+
+
+int peek(struct heap_struct heapS)
+{
+	if(heapS.N == 0)
+	{
+		printf("it is empty");
+	}
+	else
+	{
+		return heapS.items[0];
+	}
+}
+
+int poll (struct heap_struct * heapP)
+{
+	if (heapP->N ==0)
+	{
+		printf("Heap is empty");
+
+		return 0;
+	}
+	int maximum = heapP->items[0];
+	heapP->items[0]=heapP->items[(heapP->N-1)];
+	(heapP->N)=(heapP->N)-1;
+	heapify(0,heapP->N,heapP->items);
+	return maximum;
+}
+
+int* heap_sort(struct heap_struct heapS, int * sz)
+{
+	int *sortedArray = malloc(sizeof(int)* heapS.N);
+	int i=0;
+	for(i=0;i<heapS.N; i++)
+	{
+		sortedArray[i]= heapS.items[i];
+	}
+	int p;
+	*sz = heapS.N;
+	int N = *sz;
+	int j=0;
+	for (p=N-1; p>=1; p--)
+	{
+		swap(sortedArray,0,p);
+		N = N -1;
+		heapify(0, N, sortedArray);
+	}
+	
+
+
+	// for (int i = 1; i <= *sz; ++i) {
+ //        swap(sortedArray,0,*sz-i);
+ //        heapify(0, (*sz)-i, sortedArray);
+ //    }
+	
+	return sortedArray;
+	
+}
+
+/*
+	Heapsort(A,N) //T(N) =
+	buildMaxHeap(A,N) //
+	for (p=N; p≥2; p--) { //
+	swap A[1] <-> A[p]
+	N=N-1
+	sinkDown(A,1,N) }
+*/
